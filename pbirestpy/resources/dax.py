@@ -35,7 +35,10 @@ class ResponseParser:
         if "results" not in response:
             return DataFrame()
         df = DataFrame(response["results"][0]["tables"][0]["rows"])
-        df.columns = [re.sub(r"[\[\]]", "", col).strip() for col in df.columns]
+        df.columns = [
+            re.sub(r".*\[([^\]]+)\]$", r"\1", col).strip()
+            for col in df.columns
+        ]
         return df
 
     @staticmethod
