@@ -109,7 +109,7 @@ class RefreshStatus(Enum):
         for member in cls:
             if member.value.lower() == value.lower():
                 return member
-        raise ValueError(f"Unknown refresh status: {value}")
+        return cls.Failed  # fallback to failed
 
 
 class BaseRefresh(BaseResource):
