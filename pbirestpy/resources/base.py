@@ -55,7 +55,7 @@ class BaseResource:
                 value = getattr(value, path)
             else:
                 return None
-        return value
+        return str(value)
 
     def to_dict(self):
         """
