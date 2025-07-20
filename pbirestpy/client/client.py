@@ -1,8 +1,8 @@
 from typing import Annotated
-
 from pandas import DataFrame
 from .session import ApiSession
 from ..auth import ServicePrincipalAuthenticator, StaticAuthenticator
+from ..extension.dmv import DMV
 
 AUTHENTICATOR = Annotated[
     ServicePrincipalAuthenticator | StaticAuthenticator,
@@ -24,6 +24,7 @@ class PowerBIClient:
         """
         self.authenticator = authenticator
         self.session = ApiSession(self)
+        self.dmv = DMV(self)
 
     @classmethod
     def from_service_principal(

@@ -1,12 +1,14 @@
 from datetime import timedelta
 from json import dumps
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 from pandas import DataFrame, merge
 import asyncio
 from logging import getLogger, Formatter, StreamHandler
 from ..resources import *
 from ..utils import DatetimeHelper
-from ..client import PowerBIClient
+
+if TYPE_CHECKING:
+    from ..client import PowerBIClient
 
 
 class AdaptiveCard:
@@ -381,7 +383,7 @@ class MonitorSetting:
                 lambda x: x.name in self.datasets,
                 await session.list_datasets(group),
             )
-            refreshes = await session.list_refreshes(*datasets)
+            refreshes = await session.list_refresh_history(*datasets)
             self.cache_data = CacheData(
                 df=self.client.to_df(refreshes), aliases=self.datasets
             )

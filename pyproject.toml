@@ -23,9 +23,10 @@ classifiers = [
 ]
 
 dependencies = [
-  "aiohttp>=3.12.14",
-  "tenacity>=9.1.2",
-  "pandas>=2.3.1"
+  "msal",
+  "aiohttp",
+  "tenacity",
+  "pandas"
 ]
 
 [project.urls]

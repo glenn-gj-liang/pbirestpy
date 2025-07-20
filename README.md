@@ -127,9 +127,8 @@ pbirestpy/
 ## 🧪 Development
 
 ```bash
-git clone https://github.com/your-org/pbirestpy.git
+git clone https://github.com/glenn-gj-liang/pbirestpy.git
 cd pbirestpy
-pip install -r requirements.txt
 ```
 
 ---
