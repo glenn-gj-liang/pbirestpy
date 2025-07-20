@@ -1,9 +1,9 @@
 from typing import Optional
-from .base import BaseResource
+from .base import BaseRefresh
 
 
-class Transaction(BaseResource):
-    """
+class Transaction(BaseRefresh):
+    """BaseRefresh
     Represents a transaction resource in the PBI REST API.
     """
 
@@ -16,6 +16,7 @@ class Transaction(BaseResource):
         "errorInfo",
         "dataflow.id",
         "dataflow.name",
+        "dataflow.group.name",
         "dataflow.group_id",
     )
 

@@ -5,3 +5,5 @@ from .transaction import Transaction as Transaction
 from .dataset import Dataset as Dataset
 from .dataflow import Dataflow as Dataflow
 from .report import Report as Report
+from .schedule import Schedule as Schedule
+from .page import Page as Page

@@ -1,8 +1,8 @@
 from typing import Optional, List, Dict
-from .base import BaseResource
+from .base import BaseRefreshable
 
 
-class Dataflow(BaseResource):
+class Dataflow(BaseRefreshable):
     """
     Represents a dataflow resource in the Power BI REST API.
 
@@ -23,6 +23,7 @@ class Dataflow(BaseResource):
 
     def __init__(
         self,
+        objectId: Optional[str] = "",
         configuredBy: Optional[str] = None,
         users: Optional[List] = None,
         description: Optional[str] = "",
@@ -31,10 +32,12 @@ class Dataflow(BaseResource):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.objectId = objectId
         self.configuredBy = configuredBy
         self.users = users
         self.description = description
         self.generation = generation
+        self.id = self.objectId
 
     @property
     def list_refreshes_url(self) -> str:
@@ -44,6 +47,12 @@ class Dataflow(BaseResource):
         Returns:
             str: The URL to list refreshes for the dataflow.
         """
-        return BaseResource.build_url(
+        return self.build_url(
+            f"groups/{self.group_id}/dataflows/{self.id}/transactions"
+        )
+
+    @property
+    def start_refresh_url(self):
+        return self.build_url(
             f"groups/{self.group_id}/dataflows/{self.id}/refreshes?procesType=default"
         )

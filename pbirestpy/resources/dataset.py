@@ -1,11 +1,11 @@
 from typing import Optional, List, Dict
-from .base import BaseResource
+from .base import BaseRefreshable
 from .dax import DaxExecutor
 
 TOP_REFRESHES_COUNT = 50
 
 
-class Dataset(BaseResource):
+class Dataset(BaseRefreshable):
     """
     Represents a dataset resource in the Power BI REST API.
 
@@ -26,8 +26,8 @@ class Dataset(BaseResource):
         "isEffectiveIdentityRolesRequired",
         "isOnPremGatewayRequired",
         "targetStorageMode",
-        "createReportEmbedUrl",
-        "qnaEmbedUrl",
+        "createReportEmbedURL",
+        "qnaEmbedURL",
         "upstreamDatasets",
         "users",
         "queryScaleOutSettings",
@@ -47,8 +47,8 @@ class Dataset(BaseResource):
         isEffectiveIdentityRolesRequired: bool = False,
         isOnPremGatewayRequired: bool = False,
         targetStorageMode: Optional[str] = None,
-        createReportEmbedUrl: Optional[str] = None,
-        qnaEmbedUrl: Optional[str] = None,
+        createReportEmbedURL: Optional[str] = None,
+        qnaEmbedURL: Optional[str] = None,
         upstreamDatasets: Optional[List] = None,
         users: Optional[List] = None,
         queryScaleOutSettings: Optional[Dict] = None,
@@ -68,8 +68,8 @@ class Dataset(BaseResource):
         )
         self.isOnPremGatewayRequired = isOnPremGatewayRequired
         self.targetStorageMode = targetStorageMode
-        self.createReportEmbedUrl = createReportEmbedUrl
-        self.qnaEmbedUrl = qnaEmbedUrl
+        self.createReportEmbedURL = createReportEmbedURL
+        self.qnaEmbedURL = qnaEmbedURL
         self.upstreamDatasets = upstreamDatasets or []
         self.users = users or []
         self.queryScaleOutSettings = queryScaleOutSettings or {}

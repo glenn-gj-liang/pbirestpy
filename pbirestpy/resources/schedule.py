@@ -13,6 +13,9 @@ class Schedule(BaseResource):
         "localTimeZoneId",
         "notifyOption",
         "dataset.id",
+        "dataset.name",
+        "dataset.group.name",
+        "dataset.group.id",
     )
 
     def __init__(

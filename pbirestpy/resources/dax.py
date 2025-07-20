@@ -9,8 +9,6 @@ from ..utils import RuntimeHelper
 if TYPE_CHECKING:
     from . import Dataset
 
-NORM_PATT = {".*?\[": "", "\]*?": ""}  # type: ignore
-
 
 class ResponseParser:
     def __init__(self, responses) -> None:
@@ -21,25 +19,6 @@ class ResponseParser:
             responses (List): A list of responses to parse.
         """
         self.responses = responses
-
-    @staticmethod
-    def _rename_column(
-        column_name: str,
-        rename_patterns: dict = NORM_PATT,
-    ) -> str:
-        """
-        Renames a column based on the provided patterns.
-
-        Args:
-            column_name (str): The original column name.
-            rename_patterns (dict): A dictionary of patterns to rename the column.
-
-        Returns:
-            str: The renamed column name.
-        """
-        for pattern, replacement in rename_patterns.items():
-            column_name = re.sub(pattern, replacement, column_name)
-        return column_name
 
     @staticmethod
     def _construct_dataframe(response) -> DataFrame:
@@ -56,7 +35,7 @@ class ResponseParser:
         if "results" not in response:
             return DataFrame()
         df = DataFrame(response["results"][0]["tables"][0]["rows"])
-        df.columns = [ResponseParser._rename_column(col) for col in df.columns]
+        df.columns = [re.sub(r"[\[\]]", "", col).strip() for col in df.columns]
         return df
 
     @staticmethod

@@ -55,6 +55,7 @@ class BaseResource:
                 value = getattr(value, path)
             else:
                 return None
+        return value
 
     def to_dict(self):
         """
@@ -87,17 +88,24 @@ class RefreshStatus(Enum):
     Enum representing the status of a refresh operation.
     """
 
-    IN_PROGRESS = "UNKNOWN"
-    COMPLETED = "Completed"
-    FAILED = "Failed"
-    PENDING = "Pending"
-    TOTAL = "Total"
+    InProgress = "InProgress"
+    Completed = "Completed"
+    Failed = "Failed"
+    Pending = "Pending"
+    Cancelled = "Cancelled"
+    Total = "Total"
 
     def __str__(self):
         return self.name
 
     @classmethod
     def from_str(cls, value: str) -> "RefreshStatus":
+        if value.lower() == "success":
+            value = cls.Completed.value
+        if value.lower() == "unknown":
+            value = cls.InProgress.value
+        if value.lower() == "cancelling":
+            value = cls.Cancelled.value
         for member in cls:
             if member.value.lower() == value.lower():
                 return member
@@ -140,7 +148,7 @@ class BaseRefresh(BaseResource):
         Returns:
             bool: True if the refresh operation is in progress, False otherwise.
         """
-        return self.status == RefreshStatus.IN_PROGRESS
+        return self.status == RefreshStatus.InProgress
 
 
 class BaseRefreshable(BaseResource):
@@ -154,15 +162,3 @@ class BaseRefreshable(BaseResource):
         Initializes the BaseRefreshable with the provided arguments.
         """
         super().__init__(*args, **kwargs)
-
-    @property
-    def list_refreshes_url(self):
-        return NotImplementedError(
-            "This method should be implemented in subclasses to return the URL for getting refreshes."
-        )
-
-    @property
-    def start_refresh_url(self):
-        return NotImplementedError(
-            "This method should be implemented in subclasses to return the URL for refreshing."
-        )

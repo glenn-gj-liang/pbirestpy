@@ -1,8 +1,8 @@
 from typing import Optional, Dict
-from .base import BaseResource
+from .base import BaseRefresh
 
 
-class Refresh(BaseResource):
+class Refresh(BaseRefresh):
     """
     Represents a Power BI Refresh operation.
     """
@@ -19,6 +19,7 @@ class Refresh(BaseResource):
         "extendedStatus",
         "dataset.id",
         "dataset.name",
+        "dataset.group.name",
         "dataset.group_id",
     )
 
@@ -53,6 +54,6 @@ class Refresh(BaseResource):
         Returns:
             str: The URL to cancel the refresh operation.
         """
-        return BaseResource.build_url(
+        return self.build_url(
             f"groups/{self.dataset.group_id}/datasets/{self.dataset.id}/refreshes/{self.id}"
         )

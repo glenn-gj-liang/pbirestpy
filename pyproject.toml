@@ -1,24 +1,42 @@
 [project]
 name = "pbirestpy"
 version = "0.1.0"
-description = "A Python client for Power BI REST API"
-authors = [{ name="GuangJun Liang", email="guangjun_l@icloud.com" }]
+description = "An asynchronous Python client for the Power BI REST API"
+authors = [
+  { name = "GuangJun Liang", email = "guangjun_l@icloud.com" }
+]
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
-keywords = ["powerbi", "rest api", "client", "async"]
+keywords = ["powerbi", "rest api", "client", "aiohttp", "async", "pandas", "spark"]
 classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
   "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent"
+  "Operating System :: OS Independent",
+  "Framework :: AsyncIO"
+]
+
+dependencies = [
+  "aiohttp>=3.12.14",
+  "tenacity>=9.1.2",
+  "pandas>=2.3.1"
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/yourname/pbirestx"
-"Bug Tracker" = "https://github.com/yourname/pbirestx/issues"
+Homepage = "https://github.com/guangjun-liang/pbirestpy"
+Documentation = "https://github.com/guangjun-liang/pbirestpy#readme"
+Issues = "https://github.com/guangjun-liang/pbirestpy/issues"
+Source = "https://github.com/guangjun-liang/pbirestpy"
 
 [tool.setuptools.packages.find]
-where = ["pbirestpy"]
+where = ["."]
+include = ["pbirestpy*"]
 
 [build-system]
 requires = ["setuptools>=61.0"]

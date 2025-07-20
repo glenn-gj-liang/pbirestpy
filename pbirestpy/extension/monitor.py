@@ -10,12 +10,19 @@ from ..client import PowerBIClient
 
 
 class AdaptiveCard:
+    """
+    Generate Adaptive Card payloads for displaying Power BI refresh statuses.
+    """
+
     def __init__(self, title: str, df: DataFrame):
         self.title = title
         self.df = df
 
     @staticmethod
     def _build_title(title: str) -> dict:
+        """
+        Build the title section of the card, including current timestamp.
+        """
         cur_time = DatetimeHelper.get_current_datetime().strftime(
             "%Y-%m-%d %H:%M"
         )
@@ -46,6 +53,9 @@ class AdaptiveCard:
 
     @staticmethod
     def _build_table_cell(content: str, style: str, min_hieght: str = "60px"):
+        """
+        Build a single table cell for the Adaptive Card table.
+        """
         return {
             "type": "TableCell",
             "items": [
@@ -67,6 +77,9 @@ class AdaptiveCard:
     def _build_table_rows(
         data: DataFrame, status: RefreshStatus, style: str = "default"
     ):
+        """
+        Build table rows for a given refresh status.
+        """
         df = data.loc[data["Status"] == str(status), :].sort_values(
             by="EndTime", ascending=False
         )
@@ -86,6 +99,9 @@ class AdaptiveCard:
 
     @staticmethod
     def _build_table(data: DataFrame):
+        """
+        Build the complete table layout for the Adaptive Card.
+        """
         header_row = {
             "type": "TableRow",
             "cells": [
@@ -100,20 +116,25 @@ class AdaptiveCard:
             "columns": [{"width": 5}, {"width": 2}],
             "rows": [
                 header_row,
-                *build_rows(data, RefreshStatus.FAILED, "Attention"),
-                *build_rows(data, RefreshStatus.COMPLETED, "Good"),
-                *build_rows(data, RefreshStatus.IN_PROGRESS, "Accent"),
-                *build_rows(data, RefreshStatus.PENDING, "Default"),
+                *build_rows(data, RefreshStatus.Failed, "Attention"),
+                *build_rows(data, RefreshStatus.Cancelled, "Attention"),
+                *build_rows(data, RefreshStatus.Completed, "Good"),
+                *build_rows(data, RefreshStatus.InProgress, "Accent"),
+                *build_rows(data, RefreshStatus.Pending, "Default"),
             ],
         }
 
     @staticmethod
     def _build_kpi_column(data: DataFrame, status: RefreshStatus):
+        """
+        Build a KPI column showing the count for a given refresh status.
+        """
         color = {
-            RefreshStatus.PENDING: "Dark",
-            RefreshStatus.IN_PROGRESS: "Accent",
-            RefreshStatus.COMPLETED: "Good",
-            RefreshStatus.FAILED: "Attention",
+            RefreshStatus.Pending: "Dark",
+            RefreshStatus.InProgress: "Accent",
+            RefreshStatus.Completed: "Good",
+            RefreshStatus.Failed: "Attention",
+            RefreshStatus.Cancelled: "Attention",
         }
         df = data.loc[data["Status"] == str(status), :].sort_values(
             by="EndTime", ascending=False
@@ -126,7 +147,7 @@ class AdaptiveCard:
                     "type": "TextBlock",
                     "text": f"**{value}**",
                     "wrap": True,
-                    "color": color,
+                    "color": color.get(status, "Default"),
                     "horizontalAlignment": "Center",
                 },
                 {
@@ -143,6 +164,9 @@ class AdaptiveCard:
 
     @staticmethod
     def _build_kpi(data: DataFrame):
+        """
+        Build the full KPI summary section.
+        """
         build_col = AdaptiveCard._build_kpi_column
         return {
             "type": "Container",
@@ -151,9 +175,9 @@ class AdaptiveCard:
                     "type": "ColumnSet",
                     "horizontalAlignment": "Center",
                     "columns": [
-                        build_col(data, RefreshStatus.PENDING),
-                        build_col(data, RefreshStatus.IN_PROGRESS),
-                        build_col(data, RefreshStatus.FAILED),
+                        build_col(data, RefreshStatus.Pending),
+                        build_col(data, RefreshStatus.InProgress),
+                        build_col(data, RefreshStatus.Failed),
                     ],
                     "separator": True,
                     "spacing": "Large",
@@ -162,8 +186,8 @@ class AdaptiveCard:
                     "type": "ColumnSet",
                     "horizontalAlignment": "Center",
                     "columns": [
-                        build_col(data, RefreshStatus.COMPLETED),
-                        build_col(data, RefreshStatus.TOTAL),
+                        build_col(data, RefreshStatus.Completed),
+                        build_col(data, RefreshStatus.Total),
                     ],
                     "separator": True,
                     "spacing": "Large",
@@ -172,6 +196,9 @@ class AdaptiveCard:
         }
 
     def __str__(self):
+        """
+        Convert the AdaptiveCard instance to a JSON string representation.
+        """
         return dumps(
             {
                 "type": "AdaptiveCard",
@@ -187,12 +214,20 @@ class AdaptiveCard:
 
 
 class CacheData:
+    """
+    Manage and calculate refresh cache information for datasets.
+    """
+
     def __init__(self, df: DataFrame, aliases: dict):
+        # Filter out refreshes triggered via XMLA endpoint
         self.df = df.loc[df["refreshType"] != "ViaXmlaEndpoint", :].copy()
         self.aliases = aliases
 
     @property
     def latest_refreshes(self):
+        """
+        Get the latest refresh (of any status) for each dataset.
+        """
         df = self.df
         df = df.loc[df["refreshType"] != "ViaXmlaEndpoint", :]
         latest_df = (
@@ -210,6 +245,9 @@ class CacheData:
 
     @property
     def latest_completed_refreshes(self):
+        """
+        Get the latest *completed* refresh for each dataset.
+        """
         df = self.df
         completed_df = df[df["status"].astype(str) == "COMPLETED"]
         latest_completed_df = (
@@ -224,14 +262,23 @@ class CacheData:
 
     @staticmethod
     def _calculate_status(row_data):
+        """
+        Placeholder for custom logic to determine overall status.
+        """
         return row_data
 
     @staticmethod
     def _calculate_content(row_data):
+        """
+        Placeholder for custom logic to determine display content.
+        """
         return row_data
 
     @property
     def calculated(self):
+        """
+        Merge and process the refresh information into final output format.
+        """
         new_cache = merge(
             self.latest_refreshes,
             self.latest_completed_refreshes,
@@ -261,12 +308,19 @@ class CacheData:
         )
 
     def __eq__(self, other: object) -> bool:
+        """
+        Check if the calculated cache is equal to another.
+        """
         if other is None:
             return False
         return self.calculated.equals(other.calculated)  # type: ignore
 
 
 class MonitorSetting:
+    """
+    Manage monitoring configuration for a Power BI dataset group.
+    """
+
     def __init__(
         self,
         client: "PowerBIClient",
@@ -290,6 +344,9 @@ class MonitorSetting:
 
     @staticmethod
     def get_logger(name: str):
+        """
+        Create a logger instance for this monitor.
+        """
         formatter = Formatter(
             fmt="[%(asctime)s][%(name)s][%(levelname)s] %(message)s"
         )
@@ -305,12 +362,18 @@ class MonitorSetting:
 
     @cache_data.setter
     def cache_data(self, new_cache: CacheData):
+        """
+        Update the cache and trigger change event if data has changed.
+        """
         if self.__cache is None or self.__cache != new_cache:
             self.__cache = new_cache
             self.on_change(self)
             self.logger.info("Status changed.")
 
     async def fetch_data(self):
+        """
+        Fetch the latest dataset refreshes from Power BI API.
+        """
         async with self.client as session:
             groups = await session.list_groups()
             group = next(g for g in groups if g.name == self.group_name)
@@ -325,14 +388,23 @@ class MonitorSetting:
 
     @property
     def adaptive_card(self):
+        """
+        Return the current status as an Adaptive Card JSON string.
+        """
         return str(AdaptiveCard(title=self.name, df=self.__cache.calculated))
 
     @property
     def running(self):
+        """
+        Check if monitor is still within its allowed execution window.
+        """
         cur_dt = DatetimeHelper.get_current_datetime()
         return self.start_time < cur_dt <= self.stop_time
 
     async def __call__(self):
+        """
+        Main loop that fetches refresh data periodically.
+        """
         self.logger.info(f"registered.")
         while self.running:
             await self.fetch_data()
@@ -341,5 +413,8 @@ class MonitorSetting:
 
 
 async def monitor(*settings):
+    """
+    Run multiple MonitorSetting instances concurrently.
+    """
     tasks = [asyncio.create_task(setting()) for setting in settings]
     await asyncio.gather(*tasks)
