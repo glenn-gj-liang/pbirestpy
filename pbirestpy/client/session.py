@@ -1,7 +1,7 @@
 import asyncio
 from itertools import chain
 from typing import Dict, List, TYPE_CHECKING, Literal
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientResponseError, ClientSession, ClientTimeout
 
 from ..resources import *
 from ..utils import Logger, DatetimeHelper
@@ -259,23 +259,34 @@ class ApiSession(BaseSession):
         """
 
         async def fetch_data(refreshable):
-            response = await self.get(refreshable.list_refreshes_url)
-            data = (await response.json())["value"]
-            is_dataset = isinstance(refreshable, Dataset)
-            refresh_cls = Refresh if is_dataset else Transaction
-            kw_name = "dataset" if is_dataset else "dataflow"
-            kwargs = {
-                "client": self.client,
-                kw_name: refreshable,
-                "group": refreshable.group,
-            }
-            return (refresh_cls(**_, **kwargs) for _ in data)
+            try:
+                response = await self.get(refreshable.list_refreshes_url)
+                data = (await response.json())["value"]
+                is_dataset = isinstance(refreshable, Dataset)
+                refresh_cls = Refresh if is_dataset else Transaction
+                kw_name = "dataset" if is_dataset else "dataflow"
+                kwargs = {
+                    "client": self.client,
+                    kw_name: refreshable,
+                    "group": refreshable.group,
+                }
+                return (refresh_cls(**_, **kwargs) for _ in data)
+            except ClientResponseError as e:
+                if e.status in (415, 403):
+                    uri = f"[{refreshable.__class__.__name__}][{refreshable.group.name}/{refreshable.name}][Refreshes]"  # type: ignore
+                    log.info(f"{uri} {str(e)}")
+                    return None
+                else:
+                    raise e
 
         tasks = [
             asyncio.create_task(fetch_data(refreshable))
             for refreshable in refreshables
         ]
-        return chain(*(await asyncio.gather(*tasks)))
+        results = await asyncio.gather(*tasks)
+        return chain(
+            *(refreshes for refreshes in results if refreshes is not None)
+        )
 
     async def cancel_refresh(self, refresh: Refresh | Transaction):
         """
@@ -396,24 +407,34 @@ class ApiSession(BaseSession):
         Returns:
             List[Schedule]: A list of schedule model instances.
         """
+
+        async def request(dataset: Dataset):
+            try:
+                return await self.get(dataset.get_schedule_url)
+            except ClientResponseError as e:
+                if e.status == 404:
+                    uri = f"[Dataset][{dataset.group.name}/{dataset.name}][Schedules]"  # type: ignore
+                    log.info(f"{uri} {str(e)}")
+                    return None
+                else:
+                    raise e
+
         filtered = [dataset for dataset in datasets if dataset.isRefreshable]
-        tasks = [
-            asyncio.create_task(self.get(dataset.get_schedule_url))
-            for dataset in filtered
-        ]
+        tasks = [asyncio.create_task(request(dataset)) for dataset in filtered]
         responses = await asyncio.gather(*tasks)
         results = []
         for dataset, response in zip(filtered, responses):
-            data = await response.json()
-            data = {k: v for k, v in data.items() if k != "@odata.context"}  # type: ignore
-            results.append(
-                Schedule(
-                    **data,
-                    client=self.client,
-                    group=dataset.group,
-                    dataset=dataset,
+            if response is not None:
+                data = await response.json()
+                data = {k: v for k, v in data.items() if k != "@odata.context"}  # type: ignore
+                results.append(
+                    Schedule(
+                        **data,
+                        client=self.client,
+                        group=dataset.group,
+                        dataset=dataset,
+                    )
                 )
-            )
         return results
 
     async def list_pages(self, *reports: Report):
@@ -426,26 +447,39 @@ class ApiSession(BaseSession):
         Returns:
             List[Page]: A flat list of Page model instances.
         """
+
+        async def request(report: Report):
+            try:
+                return await self.get(report.list_pages_url)
+            except ClientResponseError as e:
+                if e.status == 401:
+                    uri = f"[Report][{report.group.name}/{report.name}][Pages]"  # type: ignore
+                    log.info(f"{uri} {str(e)}")
+                    return None
+                else:
+                    raise e
+
         filtered = [
             report
             for report in reports
             if report.reportType == "PowerBIReport"
         ]
-        tasks = [
-            asyncio.create_task(self.get(report.list_pages_url))
-            for report in filtered
-        ]
+        tasks = [asyncio.create_task(request(report)) for report in filtered]
         responses = await asyncio.gather(*tasks)
         results = []
         for report, response in zip(filtered, responses):
-            data = await response.json()
-            pages = (
-                Page(
-                    **_, client=self.client, report=report, group=report.group
+            if response is not None:
+                data = await response.json()
+                pages = (
+                    Page(
+                        **_,
+                        client=self.client,
+                        report=report,
+                        group=report.group,
+                    )
+                    for _ in data["value"]
                 )
-                for _ in data["value"]
-            )
-            results.append(pages)
+                results.append(pages)
         return list(chain(*results))
 
     async def get_group(self, group_name: str):
