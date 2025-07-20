@@ -1,37 +1,55 @@
-from functools import lru_cache
-from os import environ
-from typing import Callable
+from functools import wraps
+from typing import Callable, Any
+import pandas as pd
+import inspect
 
 
 class RuntimeHelper:
-    @staticmethod
-    @lru_cache(maxsize=None)
-    def is_on_databricks():
-        """
-        Checks if the code is running on Databricks by looking for the
-        DATABRICKS_RUNTIME_VERSION environment variable.
-        Returns:
-            bool: True if running on Databricks, False otherwise.
-        """
 
-        if environ.get("DATABRICKS_RUNTIME_VERSION"):
+    @staticmethod
+    def is_on_databricks() -> bool:
+        try:
+            import databricks.sdk.runtime  # type: ignore # noqa
+
             return True
-        return False
+        except ImportError:
+            return False
 
     @staticmethod
-    def to_sparkdf(func: Callable):
+    def to_sparkdf(func: Callable[..., Any]) -> Callable[..., Any]:
         """
-        Decorator to convert a function's return value to a Spark DataFrame.
-        This is a placeholder for actual implementation.
+        Decorator to convert return value of a function (sync or async)
+        to Spark DataFrame if running on Databricks.
+
+        - If the function is async, awaits the result.
+        - If the result is a list or pandas DataFrame, converts to Spark DataFrame on Databricks.
         """
 
-        def wrapper(*args, **kwargs):
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            result = await func(*args, **kwargs)
+            return RuntimeHelper._to_df(result)
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-            if RuntimeHelper.is_on_databricks():
-                # Convert result to Spark DataFrame if running on Databricks
-                from databricks.sdk.runtime import spark  # type: ignore
+            return RuntimeHelper._to_df(result)
 
-                result = spark.createDataFrame(result)
-            return result
+        if inspect.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
 
-        return wrapper
+    @staticmethod
+    def _to_df(data: Any) -> Any:
+        """
+        Convert a list/dict/pandas.DataFrame to Spark DataFrame if on Databricks.
+        Otherwise return pandas.DataFrame or original data.
+        """
+        if RuntimeHelper.is_on_databricks():
+            from databricks.sdk.runtime import spark  # type: ignore
+
+            if isinstance(data, pd.DataFrame):
+                return spark.createDataFrame(data)
+            return spark.createDataFrame(data)
+        return data
