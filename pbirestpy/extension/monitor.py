@@ -4,7 +4,7 @@ from typing import Callable, TYPE_CHECKING
 from pandas import DataFrame, merge
 import asyncio
 from logging import getLogger, Formatter, StreamHandler
-
+from ..resources.base import RefreshStatus
 from ..utils import DatetimeHelper
 
 if TYPE_CHECKING:
@@ -78,7 +78,7 @@ class AdaptiveCard:
 
     @staticmethod
     def _build_table_rows(
-        data: DataFrame, status: RefreshStatus, style: str = "default"
+        data: DataFrame, status: "RefreshStatus", style: str = "default"
     ):
         """
         Build table rows for a given refresh status.
