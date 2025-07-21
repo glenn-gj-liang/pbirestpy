@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from ..resources import *
 from ..utils import RuntimeHelper
 
 if TYPE_CHECKING:

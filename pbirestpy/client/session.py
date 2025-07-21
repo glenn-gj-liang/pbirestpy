@@ -1,6 +1,6 @@
 import asyncio
 from itertools import chain
-from typing import Dict, List, TYPE_CHECKING, Literal
+from typing import Dict, List, TYPE_CHECKING, Literal, Optional
 from aiohttp import ClientResponseError, ClientSession, ClientTimeout
 
 from ..resources import *
@@ -328,6 +328,7 @@ class ApiSession(BaseSession):
     async def refresh(
         self,
         refreshable: Dataflow | Dataset,
+        payload: Optional[Dict] = None,
         refresh_type: Literal["Full", "Calculate"] = "Full",
         force: bool = False,
         wait_until_complete: bool = False,
@@ -343,15 +344,18 @@ class ApiSession(BaseSession):
         """
 
         async def submit():
-            kwargs = {}
-            if isinstance(refreshable, Dataset):
-                kwargs.update(
-                    {"json": {"retryCount": 3, "type": refresh_type}}
-                )
-            elif isinstance(refreshable, Dataflow):
-                kwargs.update({"json": {"refreshRequest": ""}})
-            log.info(f"{uri} start to refresh.")
+            is_dataset = isinstance(refreshable, Dataset)
+            default_payload = (
+                {"retryCount": 3, "type": refresh_type}
+                if is_dataset
+                else {"refreshRequest": ""}
+            )
+            nonlocal payload
+            if payload is not None:
+                default_payload.update(payload)
 
+            kwargs = {"json": default_payload}
+            log.info(f"{uri} start to refresh. payload : {default_payload}")
             trigger_time = DatetimeHelper.get_current_datetime()
             await self.post(refreshable.start_refresh_url, **kwargs)
             if wait_until_complete:
@@ -384,6 +388,7 @@ class ApiSession(BaseSession):
                             )
                             waiting = False
 
+        payload = {} if payload is None else payload
         last = await self.get_last_refresh(refreshable)
         uri = f"[{refreshable.__class__.__name__}][{refreshable.group.name}/{refreshable.name}]"  # type: ignore
         if last is not None and last.is_in_progress:

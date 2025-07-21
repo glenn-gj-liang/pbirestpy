@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict
 from .base import BaseRefreshable
-from .dax import DaxExecutor
+from ..extension import DaxExecutor
 
 TOP_REFRESHES_COUNT = 50
 

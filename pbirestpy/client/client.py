@@ -2,7 +2,7 @@ from typing import Annotated
 from pandas import DataFrame
 from .session import ApiSession
 from ..auth import ServicePrincipalAuthenticator, StaticAuthenticator
-from ..extension.dmv import DMV
+from ..extension import DMV
 
 AUTHENTICATOR = Annotated[
     ServicePrincipalAuthenticator | StaticAuthenticator,

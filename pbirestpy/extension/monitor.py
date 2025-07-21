@@ -4,11 +4,12 @@ from typing import Callable, TYPE_CHECKING
 from pandas import DataFrame, merge
 import asyncio
 from logging import getLogger, Formatter, StreamHandler
-from ..resources import *
+
 from ..utils import DatetimeHelper
 
 if TYPE_CHECKING:
     from ..client import PowerBIClient
+    from ..resources import *
 
 
 class AdaptiveCard:

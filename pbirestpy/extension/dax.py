@@ -7,7 +7,7 @@ from requests import post
 from ..utils import RuntimeHelper
 
 if TYPE_CHECKING:
-    from . import Dataset
+    from ..resources import Dataset
 
 
 class ResponseParser:
